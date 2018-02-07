@@ -1,0 +1,51 @@
+html {
+    margin:0;
+    padding:0;
+}
+
+table {
+    float: left;
+    width: 100%;
+    white-space: pre;
+}
+
+td {
+    background-color: white;
+    width: 33.33%;
+    position: relative;
+}
+
+tr {
+    text-align: center;
+}
+
+#header {
+    background-color: aquamarine
+}
+
+.footer {
+    background-color: aquamarine;
+    font-size: 15px;
+}
+
+.heiight {
+    font-size: 100px
+}
+
+.board {
+    border: 1px solid black;
+    border-spacing: 0px;
+    border-collapse: collapse;
+}
+
+/*
+#Cell1{}
+#Cell2{}
+#Cell3{}
+#Cell4{}
+#Cell5{}
+#Cell6{}
+#Cell7{}
+#Cell8{}
+#Cell9{}
+*/

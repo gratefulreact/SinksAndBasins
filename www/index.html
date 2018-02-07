@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+    <title></title>
+    <link rel="manifest" href="manifest.json">
+    <link href="css/style.css" rel="stylesheet">
+
+    <!-- ionic/angularjs js -->
+    <script src="lib/ionic/js/ionic.bundle.js"></script>
+
+    <!-- cordova script (this will be a 404 during development) -->
+    <script src="cordova.js"></script>
+
+    <!-- your app's js -->
+    <script src="js/app.js"></script>
+  </head>
+  <body ng-app="myApp" ng-controller="appCtrl">
+      <table height="500" >
+          <tr class="height">
+              <td colspan = "3" id="header" width="500">Sinks And Basins</td> 
+          </tr>
+          <tr class="heiight">
+              <td id="Cell1" class="board">{{ Grid[0][0][0] }}</td>
+              <td id="Cell2" class="board">{{ Grid[0][1][0] }}</td>
+              <td id="Cell3" class="board">{{ Grid[0][2][0] }}</td>
+          </tr>
+          <tr class="heiight">
+              <td id="Cell4" class="board">{{ Grid[1][0][0] }}</td>
+              <td id="Cell5" class="board">{{ Grid[1][1][0] }}</td>
+              <td id="Cell6" class="board">{{ Grid[1][2][0] }}</td>
+          </tr>
+          <tr class="heiight">
+              <td id="Cell7" class="board">{{ Grid[2][0][0] }}</td>
+              <td id="Cell8" class="board">{{ Grid[2][1][0] }}</td>
+              <td id="Cell9" class="board">{{ Grid[2][2][0] }}</td>
+          </tr>
+          <tr class="footer"> 
+            <td class="footer">Sinks : {{ sinkCount }}</td>
+            <td class="footer"> <button ng-click="Start()">Start New</button></td>
+            <td class="footer">Basins : {{ basinCount }}</td>
+          </tr>
+          <tr><td colspan="3" class="footer">Basins</td></tr>
+          <tr ng-repeat="basin in SharedBasins">
+            <td colspan="3">{{basin}}</td>
+          </tr>
+          <tr><td colspan="3" class="footer">Sinks</td></tr>
+          <tr ng-repeat="sink in Sinks">
+            <td colspan="3">{{sink}}</td>
+          </tr>
+      </table>
+      <script>
+          var app = angular.module('myApp', []);
+          app.controller('appCtrl', ['$scope', function($scope) {
+            //Three Dimensional Array
+
+            //Initial
+            $scope.Grid = [
+              [[' '], [' '], [' ']],
+              [[' '], [' '], [' ']],
+              [[' '], [' '], [' ']]
+            ];
+            $scope.Basins = [];
+            $scope.SharedBasins = [];
+            $scope.Sinks = [];
+            $scope.sinkCount = 0;
+            $scope.basinCount = 0;
+
+            //Button Click
+            $scope.Start = function() {
+
+              //Reset Globals
+              $scope.Basins = [];
+              $scope.SharedBasins = [];
+              $scope.Sinks = [];
+              $scope.Grid = [
+                [[' '], [' '], [' ']],
+                [[' '], [' '], [' ']],
+                [[' '], [' '], [' ']]
+              ];
+              
+              //Randomize Grid
+              for(var x = 0; x < 3; x++){
+                for(var y = 0; y < 3; y++){
+                  $scope.Grid[x][y][0] = Math.floor(Math.random() * 9) + 1;  
+                }
+              }
+
+              //Eval Basins And SinkFlows
+              for(var x = 0; x < 3; x++){
+                for(var y = 0; y < 3; y++){
+                  var currentBasin = [[x,y]];
+                  EmitIndividualSinksAndBasins(x, y, currentBasin);         
+                  $scope.Basins.push(currentBasin);
+                }
+              }
+
+              //Eval Sinks
+              for(var x = 0; x < $scope.Basins.length; x++){
+                var sinkA = $scope.Basins[x].slice(-1)[0];
+                var sinkIsDuplicate = false;
+                for(var y = 0; y < $scope.Sinks.length; y++){
+                  var sinkB = $scope.Sinks[y];
+                  if(JSON.stringify(sinkA) == JSON.stringify(sinkB)){
+                    sinkIsDuplicate = true;
+                  }
+                }
+                if(!sinkIsDuplicate) $scope.Sinks.push($scope.Basins[x].slice(-1)[0]);
+              }
+
+              //Remove Duplicate Sinks
+              for(var i = 0; i < $scope.SharedBasins.length; i++){
+                var uniqueTiles = [];
+                for(var t = 0; t < $scope.SharedBasins[i].length; t++){
+                  var tileA = $scope.SharedBasins[i][t];
+                  var tileIsDuplice = false;
+                  for(var u = 0; u < uniqueTiles.length; u++){
+                    var tileB = uniqueTiles[u];
+                    if(JSON.stringify(tileA) == JSON.stringify(tileB)){
+                      tileIsDuplice = true;
+                    }
+                  }
+                  if(!tileIsDuplice) uniqueTiles.push(tileA);
+                }
+                $scope.SharedBasins[i] = uniqueTiles;
+              }
+
+              //JOIN basins with the same sink
+              for(var i = 0; i < $scope.Basins.length; i++){
+                var sinkA = $scope.Basins[i].slice(-1)[0];
+                var basin = [].concat($scope.Basins[i]);
+                for(var x = 0; x < $scope.Basins.length; x++){
+                  if(i == x) continue;
+                  var sinkB = $scope.Basins[x].slice(-1)[0];
+                  if(JSON.stringify(sinkA) == JSON.stringify(sinkB)){
+                    basin = basin.concat($scope.Basins[x]);
+                  }
+                }
+                $scope.SharedBasins.push(basin);
+              }
+              
+              //Sort basin tiles
+              for(var x = 0; x < $scope.SharedBasins.length; x++){
+                $scope.SharedBasins[x].sort(function(a,b){
+                  //compare x-axis
+                  if(a[0] > b[0]) return 1;
+                  if(a[0] < b[0]) return -1;
+                  //compare y-axis
+                  if(a[0] == b[0] && a[1] > b[1]) return 1;
+                  if(a[0] == b[0] && a[1] < b[1]) return -1;
+                });
+              }
+              
+              //Remove Duplicate Tiles
+              for(var i = 0; i < $scope.SharedBasins.length; i++){
+                var uniqueTiles = [];
+                for(var t = 0; t < $scope.SharedBasins[i].length; t++){
+                  var tileA = $scope.SharedBasins[i][t];
+                  var tileIsDuplice = false;
+                  for(var u = 0; u < uniqueTiles.length; u++){
+                    var tileB = uniqueTiles[u];
+                    if(JSON.stringify(tileA) == JSON.stringify(tileB)){
+                      tileIsDuplice = true;
+                    }
+                  }
+                  if(!tileIsDuplice) uniqueTiles.push(tileA);
+                }
+                $scope.SharedBasins[i] = uniqueTiles;
+              }
+
+              //Remove Duplicate Basins
+              var uniqueSharedBasins = [];
+              for(var i = 0; i < $scope.SharedBasins.length; i++){
+                var basinA = $scope.SharedBasins[i];
+                var basinIsDuplicate = false;
+                for(var u = 0; u < uniqueSharedBasins.length; u++){
+                  var basinB = uniqueSharedBasins[u];
+                  if(JSON.stringify(basinA) == JSON.stringify(basinB)){
+                    basinIsDuplicate = true;
+                  }
+                }
+                if(!basinIsDuplicate) uniqueSharedBasins.push(basinA);
+              }
+              $scope.SharedBasins = uniqueSharedBasins;
+
+              //Update Counts
+              $scope.basinCount = $scope.SharedBasins.length;
+              $scope.sinkCount = $scope.Sinks.length;
+            };
+
+            //Recursive Function
+            //Args 3 and 4 are the initial Coords and dont change during the recursion
+            function EmitIndividualSinksAndBasins(x, y, currentBasin){
+              //1. Check for lowest next Number
+              //2. Check for directions of lowest next Number
+              //3. Repeat on coords of lowest number until no further found
+
+              //Check for valid coords
+              if(x < 0) return;
+              if(y < 0) return;
+
+              var numbers = [ ];
+
+              //Check for lower numbers and save them
+              if((x-1) >= 0 && $scope.Grid[x][y][0] > $scope.Grid[x-1][y][0]){
+                numbers.push($scope.Grid[x-1][y][0]);
+              }
+              if((y+1) < $scope.Grid[x].length && $scope.Grid[x][y][0] > $scope.Grid[x][y+1][0]){
+                numbers.push($scope.Grid[x][y+1][0]);
+              } 
+              if((x+1) < $scope.Grid.length && $scope.Grid[x][y][0] > $scope.Grid[x+1][y][0]){
+                numbers.push($scope.Grid[x+1][y][0]);
+              }
+              if((y-1) >= 0 && $scope.Grid[x][y][0] > $scope.Grid[x][y-1][0]){
+                numbers.push($scope.Grid[x][y-1][0]);
+              }
+
+              if(numbers.length > 0){
+                //Get Lowest number from found lower numbers
+                var min = Math.min.apply(Math, numbers);
+
+                if(min){
+                  if((x-1) >= 0 && $scope.Grid[x-1][y][0] == min){
+                    currentBasin.push([x-1,y]);
+                    EmitIndividualSinksAndBasins((x-1),y, currentBasin);
+                  }
+                  else if((y+1) < $scope.Grid[x].length && $scope.Grid[x][y+1][0] == min){
+                    currentBasin.push([x,y+1]);
+                    EmitIndividualSinksAndBasins(x,(y+1), currentBasin);
+                  }
+                  else if((x+1) < $scope.Grid.length && $scope.Grid[x+1][y][0] == min){
+                    currentBasin.push([x+1,y]);
+                    EmitIndividualSinksAndBasins((x+1),y, currentBasin);
+                  }
+                  else if((y-1) >= 0 && $scope.Grid[x][y-1][0] == min){
+                    currentBasin.push([x,y-1])
+                    EmitIndividualSinksAndBasins(x,(y-1), currentBasin);
+                  }
+                }
+              }
+            }
+          }]);
+        </script>
+  </body>
+</html>
